@@ -52,7 +52,8 @@ def train_predict(method: str, hp: float, k: int, x_tr, y_tr, d_tr, x_te, seed: 
 
     def mmd(a, b, gammas=(0.001, 0.01, 0.1, 1, 10, 100, 1000)):
         def kern(u, v):
-            return sum(torch.exp(-g * torch.cdist(u, v).pow(2)) for g in gammas)
+            d = torch.cdist(u, v).pow(2)          # computed once: the gradient summation order matters for exactness
+            return sum(torch.exp(-g * d) for g in gammas)
         return kern(a, a).mean() + kern(b, b).mean() - 2 * kern(a, b).mean()
 
     torch.manual_seed(seed)

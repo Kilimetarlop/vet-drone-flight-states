@@ -79,6 +79,7 @@ python scripts/run_vet.py views.npz --reference-outputs reference.npz           
 - **Mechanism.** On held-out source products, the untested blend proposes 176 changes (94 repairs, 49 damages, 33 neutral); the direction test admits 49, 10, and 9, and the gate 30, 7, and 8. Confidence ranks a repair above a damage with an AUC of 0.596. A pooled threshold that admits 49 repairs admits at least 16 damages.
 - **Sensitivity.** The twelve admission-threshold settings and four fixed configurations give 114 to 118 correct reports, as in Table VI.
 - **Statistics.** Wilson interval 62.93%–76.64%, McNemar p = 0.021, sign-flip p = 0.0625, and product-bootstrap intervals of ΔAccuracy [+1.79, +9.52], ΔMacro-F1 [−0.46, +6.81], and ΔBA [−3.39, +3.39] points.
+- **Baselines.** Retrained with `--with-baselines`, all seven DG methods give the paper's reports for all 168 recordings: ERM 83, IRM 82, V-REx 84, Group DRO 87, CORAL 91, MMD 87, and DANN 80 correct.
 - **Views.** Re-extracted from four raw recordings of different products and states (`--raw-root`), the envelope view equals the saved view exactly and the STFT view agrees within 8.6e-6 (the windows and the STFT channels are stored as float16).
 
 ## Data
