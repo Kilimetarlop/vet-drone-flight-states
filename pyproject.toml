@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vet-drone-flight-states"
+version = "1.0.0"
+description = "VET: verified evidence transfer for radio-frequency flight states of unseen drones"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10", "scikit-learn>=1.3", "h5py>=3.8"]
+
+[project.optional-dependencies]
+views = ["torch>=2.0"]
+baselines = ["torch>=2.0", "joblib>=1.2"]
+test = ["pytest>=7"]
+
+[tool.setuptools]
+packages = ["vet"]

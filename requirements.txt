@@ -1,0 +1,8 @@
+# Versions used for the paper's results; other recent versions should work.
+numpy==2.2.6
+scipy==1.14.1
+scikit-learn==1.5.2
+h5py==3.16.0
+torch==2.7.1          # STFT view and DG baselines only
+joblib>=1.2           # DG baselines only
+pytest>=7             # tests only
