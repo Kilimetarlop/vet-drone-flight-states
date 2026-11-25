@@ -21,6 +21,7 @@ a desktop CPU.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -63,8 +64,12 @@ def features(args) -> None:
     w.mkdir(parents=True, exist_ok=True)
     tokens = w / "drff_r2_dataset1_behavior5_event_tokens_v2.npz"
     energy = w / "drff_r2_dataset1_behavior5_slow_time_energy_v3.npz"
+    # the event builder ends with an optional recall audit against decoded protocol windows; without any, pass none
+    no_windows = w / "no_protocol_windows.json"
+    no_windows.write_text(json.dumps({"recordings": []}), encoding="utf-8")
     _cli(build_event_tokens, [root, "--partial-dir", w / "event_tokens.partial", "--output", tokens,
-                              "--report", w / "event_tokens_report.json", "--device", dev])
+                              "--report", w / "event_tokens_report.json", "--device", dev,
+                              "--crc-report", no_windows])
     _cli(build_slow_time_energy, [root, "--event-cache", tokens, "--partial-dir", w / "slow_time_energy.partial",
                                   "--output", energy, "--report", w / "slow_time_energy_report.json"])
     _cli(build_micro_iq, [root, "--partial-dir", w / "micro_iq.partial", "--output-cache", w / CACHES["metadata"]])
