@@ -1,9 +1,9 @@
 """A stand-in reference classifier for running VET end to end.
 
 VET keeps a source-trained reference classifier as its default answer (Step 1). The paper's reference is the
-authors' hierarchical classifier of Section IV-B, whose outputs give the paper's numbers; it is not part of this
-package. `make_logistic_reference` builds a simple reference with the required interface: standardization, PCA, and a
-class-balanced logistic regression on the given features. Expect different numbers from the paper with it.
+hierarchical classifier of Section IV-B, which `reference/run_reference.py` runs and exports. `make_logistic_reference`
+builds a simple stand-in with the required interface: standardization, PCA, and a class-balanced logistic regression
+on the given features. Expect different numbers from the paper with it.
 """
 
 from __future__ import annotations

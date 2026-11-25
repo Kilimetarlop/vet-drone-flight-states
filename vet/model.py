@@ -6,8 +6,8 @@ The reference classifier is supplied by the caller. It is any callable
 
 that fits on the recordings `train` (labels and side information are the caller's business) and returns, for the
 recordings `test`, the judged state h (n,) in 0..3 and the four-state reference posterior d (n, 4). The paper's
-reference is the authors' hierarchical classifier of Section IV-B; `PrecomputedReference` serves saved outputs of any
-reference so that VET can be rerun without refitting it.
+reference is the hierarchical classifier of Section IV-B (reference/ in this repository); `make_precomputed_reference`
+serves saved outputs of any reference so that VET can be rerun without refitting it.
 
 Splits follow eqs. (1) and (2): outer fold t fits on the source set S_t and reports the target product t; the held-out
 source predictions M_t come from fitting on G minus {t, g} and predicting each source product g.

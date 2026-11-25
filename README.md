@@ -1,6 +1,6 @@
 # VET: Verified Evidence Transfer for Radio-Frequency Flight States of Unseen Drones
 
-This repository holds the core implementation of the paper *VET: Verified Evidence Transfer for Radio-Frequency Flight States of Unseen Drones* (under review).
+This repository holds the implementation of the paper *VET: Verified Evidence Transfer for Radio-Frequency Flight States of Unseen Drones* by Xinbin Zhang, Tiantian Tang, and Guan Gui (Nanjing University of Posts and Telecommunications), under review.
 
 A passive counter-drone monitor reads whether a drone hovers, climbs, descends, or passes by from the drone's own radio link. Deployed, it keeps meeting drone models that supplied no training data. Added evidence about the flight then repairs some of its errors on such a model but damages some correct reports. VET keeps the source-trained classifier as the default answer and corrects a report only in directions that held-out known models have verified.
 
@@ -21,7 +21,8 @@ A passive counter-drone monitor reads whether a drone hovers, climbs, descends, 
 | `vet/baselines.py` | Sec. V-B, Table III | ERM, IRM, V-REx, Group DRO, CORAL, MMD, DANN retrained on the same views (PyTorch) |
 | `vet/metrics.py` | Secs. III-D, V-G | accuracy, balanced accuracy, Macro-F1, paired outcomes, exact McNemar, Wilson, sign-flip, product bootstrap |
 | `vet/data.py` | Sec. V-A, Table I | DRFF-R2 Dataset 1 inventory: products, conditions c1–c21, four-state map |
-| `vet/reference.py` | — | a stand-in reference classifier with the interface VET needs (see "Not included") |
+| `reference/` | Sec. IV-B | **the paper's hierarchical reference classifier** (Step 1 of VET): feature builders, four branches, plurality vote, horizontal expert, veto and Hover override, strict double exclusion; see `reference/README.md` |
+| `vet/reference.py` | — | a simple stand-in reference with the interface VET needs, for use without `reference/` |
 
 ## Installation
 
@@ -31,7 +32,7 @@ cd vet-drone-flight-states
 pip install -r requirements.txt
 ```
 
-Python 3.10 or later. The pinned versions are those that produced the paper's results; PyTorch is needed only for the STFT view and the DG baselines.
+Python 3.10 or later. The pinned versions are those with which every check below was run; PyTorch is needed for the STFT view, the reference features, and the DG baselines, and aeon for the reference classifier.
 
 ## Quick start
 
@@ -63,11 +64,14 @@ Everything VET selects (the configuration, the admitted directions) is read from
 ## Running the pipeline on DRFF-R2
 
 ```bash
-python scripts/extract_views.py /path/to/DRFF-R2/dataset1-single_drone_states views.npz      # about 100 GB read
-python scripts/run_vet.py views.npz --reference-outputs reference.npz                         # your reference's outputs
+export DRFF_R2_DATASET1=/path/to/DRFF-R2/dataset1-single_drone_states
+python scripts/extract_views.py $DRFF_R2_DATASET1 views.npz                                   # VET's two views
+python reference/run_reference.py features --dataset-root $DRFF_R2_DATASET1 --work work/      # reference features
+python reference/run_reference.py model --work work/ --out reference_outputs.npz              # reference outputs
+python scripts/run_vet.py views.npz --reference-outputs reference_outputs.npz                 # VET (Algorithm 1)
 ```
 
-`run_vet.py` documents the format of the reference outputs. Without `--reference-outputs`, it fits the stand-in reference of `vet/reference.py` inside every split. That reference is weak on unseen products (78 of 168 correct), its errors do not recur by direction, and VET admits no change on top of it: VET's gain comes from verifying the recurring errors of a strong reference.
+Each extraction step reads Dataset 1 (about 100 GB) once; `model` takes about an hour on a desktop CPU. `run_vet.py` documents the format of the reference outputs, so any other reference classifier can take Step 1. Without `--reference-outputs`, it fits the stand-in of `vet/reference.py` inside every split. That reference is weak on unseen products (78 of 168 correct), its errors do not recur by direction, and VET admits no change on top of it: VET's gain comes from verifying the recurring errors of a strong reference.
 
 ## Faithfulness to the paper
 
@@ -80,6 +84,7 @@ python scripts/run_vet.py views.npz --reference-outputs reference.npz           
 - **Sensitivity.** The twelve admission-threshold settings and four fixed configurations give 114 to 118 correct reports, as in Table VI.
 - **Statistics.** Wilson interval 62.93%–76.64%, McNemar p = 0.021, sign-flip p = 0.0625, and product-bootstrap intervals of ΔAccuracy [+1.79, +9.52], ΔMacro-F1 [−0.46, +6.81], and ΔBA [−3.39, +3.39] points.
 - **Baselines.** Retrained with `--with-baselines`, all seven DG methods give the paper's reports for all 168 recordings: ERM 83, IRM 82, V-REx 84, Group DRO 87, CORAL 91, MMD 87, and DANN 80 correct.
+- **Reference classifier.** Rerun with `reference/run_reference.py model` on the paper's feature caches, it reproduces every judgment and posterior of the paper's reference on the target and the held-out source products, and VET on these outputs reproduces all 168 reports; see `reference/README.md`.
 - **Views.** Re-extracted from four raw recordings of different products and states (`--raw-root`), the envelope view equals the saved view exactly and the STFT view agrees within 8.6e-6 (the windows and the STFT channels are stored as float16).
 
 ## Data
@@ -88,13 +93,13 @@ DRFF-R2 (Zheng et al., *Scientific Data*, 2026, doi:10.1038/s41597-026-08490-8) 
 
 ## Not included
 
-- **The paper's reference classifier.** Step 1 of VET in the paper is the authors' hierarchical classifier (Section IV-B: four branches voting over five classes, a horizontal expert, a veto, and a Hover override). Its code belongs to the authors' wider research pipeline and is not part of this core release. Any classifier with the `reference(train, test) -> (h, d)` interface can take its place; to rerun the paper's numbers exactly, its outputs are needed.
-- **The arrays behind `verify_paper.py`.** They contain features derived from DRFF-R2 (see Data).
+- **The arrays behind `scripts/verify_paper.py` and `reference/verify_reference.py`.** They contain features derived from DRFF-R2 (see Data); the scripts document what they compare, and their results are listed above.
 
 ## Citation
 
 ```bibtex
-@article{vet2026,
+@article{zhang2026vet,
+  author  = {Xinbin Zhang and Tiantian Tang and Guan Gui},
   title   = {{VET}: Verified Evidence Transfer for Radio-Frequency Flight States of Unseen Drones},
   note    = {Under review},
   year    = {2026}

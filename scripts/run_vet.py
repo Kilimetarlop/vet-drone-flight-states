@@ -2,7 +2,9 @@
 
     python scripts/run_vet.py views.npz [--reference-outputs reference.npz] [--out reports.csv]
 
-The reference classifier is Step 1 of VET. Pass the outputs of your reference with --reference-outputs, an .npz with
+The reference classifier is Step 1 of VET. `reference/run_reference.py model` writes the outputs of the paper's
+hierarchical reference in this format; any other reference can be passed with --reference-outputs, an .npz with
+    event     (n,)       optional: recording file names, used to align rows with the views
     folds     (F,)       product names in outer-fold order (sorted)
     target_h  (n,)       judged state of every recording, from the reference fitted on the other products
     target_d  (n, 4)     four-state posterior of every recording, same fits
@@ -10,7 +12,7 @@ The reference classifier is Step 1 of VET. Pass the outputs of your reference wi
                          folds[o] and without that recording's product
     source_d  (F, n, 4)  the matching posteriors
 Without it, the stand-in reference of vet.reference (logistic regression on both views) is fitted inside every split;
-its numbers differ from the paper, whose reference is the authors' hierarchical classifier (Section IV-B).
+its numbers differ from the paper's.
 """
 
 from __future__ import annotations
@@ -42,8 +44,12 @@ def main() -> None:
     views = {"envelope": a["envelope"].astype(np.float64), "stft": a["stft"].astype(np.float64)}
     if args.reference_outputs:
         r = np.load(args.reference_outputs, allow_pickle=False)
-        reference = make_precomputed_reference(product, r["folds"].astype(str).tolist(), r["target_h"], r["target_d"],
-                                               r["source_h"], r["source_d"])
+        idx = np.arange(len(y))
+        if "event" in r.files:                       # align rows by recording file name
+            order = {e: i for i, e in enumerate(r["event"].astype(str))}
+            idx = np.array([order[e] for e in a["event"].astype(str)])
+        reference = make_precomputed_reference(product, r["folds"].astype(str).tolist(), r["target_h"][idx],
+                                               r["target_d"][idx], r["source_h"][:, idx], r["source_d"][:, idx])
     else:
         reference = make_logistic_reference(np.hstack((views["envelope"], views["stft"])), y, temperature=3.0)
     res = run_whole_product_holdout(y, product, views, reference)

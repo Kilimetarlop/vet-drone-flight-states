@@ -13,7 +13,7 @@ Given them in one .npz file, this script reruns every step of VET with the packa
   views      (optional, --raw-root) both views re-extracted from raw DRFF-R2 files
   baselines  (optional, --with-baselines) the seven retrained DG methods
 
-Usage: python scripts/verify_paper.py --cache paper_arrays.npz [--raw-root DIR --n-raw 4] [--with-baselines]
+Usage: python scripts/verify_paper.py --cache paper_arrays.npz [--raw-root DIR --n-raw 4] [--with-baselines --jobs 8]
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ def main() -> int:
     ap.add_argument("--raw-root", type=Path)
     ap.add_argument("--n-raw", type=int, default=4)
     ap.add_argument("--with-baselines", action="store_true")
+    ap.add_argument("--jobs", type=int, default=-1, help="parallel workers of the DG baselines (fewer need less memory)")
     ap.add_argument("--out", type=Path, default=Path("verification.json"))
     args = ap.parse_args()
     a = dict(np.load(args.cache, allow_pickle=False))
@@ -139,7 +140,7 @@ def main() -> int:
         x = np.hstack((a["envelope"], a["stft"])).astype(np.float64)
         report["baselines"] = {}
         for method in METHODS:
-            p, chosen_dg = run_baseline(method, x, y, product)
+            p, chosen_dg = run_baseline(method, x, y, product, n_jobs=args.jobs)
             same = bool(np.array_equal(p, a[f"dg_{method}"]))
             report["baselines"][method] = {"correct": int((p == y).sum()), "identical_reports": same}
             ok &= same

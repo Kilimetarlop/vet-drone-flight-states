@@ -1,8 +1,9 @@
-# Versions used for the paper's results; other recent versions should work.
+# Environment of the paper's results (exact reproduction was verified with these versions).
 numpy==2.2.6
 scipy==1.14.1
-scikit-learn==1.5.2
-h5py==3.16.0
-torch==2.7.1          # STFT view and DG baselines only
-joblib>=1.2           # DG baselines only
-pytest>=7             # tests only
+scikit-learn==1.8.0   # VET's checks also pass with 1.5.2
+h5py>=3.12
+torch==2.7.1          # STFT view, reference features, DG baselines
+aeon==1.5.0           # reference classifier: MultiRocket and Hydra transforms
+joblib>=1.2           # DG baselines
+pytest>=7             # tests
