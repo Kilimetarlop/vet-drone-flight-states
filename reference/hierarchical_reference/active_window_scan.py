@@ -36,7 +36,8 @@ def _scan_scores(
         value -= value.mean()
         values.append(value)
     batch = np.stack(values) * taper[None, :]
-    spectrum = np.fft.fftshift(np.fft.fft(batch, axis=1), axes=1)
+    # complex128: NumPy 2 transforms complex64 input in single precision, which reorders near-tied scores
+    spectrum = np.fft.fftshift(np.fft.fft(batch.astype(np.complex128), axis=1), axes=1)
     power = np.abs(spectrum) ** 2
     width = int(SCAN_SAMPLES * CENTRAL_BAND_FRACTION)
     center = SCAN_SAMPLES // 2

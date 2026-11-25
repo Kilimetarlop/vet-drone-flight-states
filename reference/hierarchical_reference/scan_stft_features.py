@@ -352,8 +352,9 @@ def build_stft_features(view: np.ndarray) -> np.ndarray:
             (
                 token.mean(axis=0),
                 token.std(axis=0),
-                np.quantile(token, 0.10, axis=0),
-                np.quantile(token, 0.90, axis=0),
+                # float64: NumPy 2 interpolates float32 quantiles in single precision
+                np.quantile(token.astype(np.float64), 0.10, axis=0),
+                np.quantile(token.astype(np.float64), 0.90, axis=0),
             )
         )
         rows.append(

@@ -1,9 +1,9 @@
-"""Extract the envelope view (454-d) and the STFT view (1524-d) of every DRFF-R2 Dataset 1 recording.
+"""Extract the envelope view (454-d) and the STFT view (1524-d) of the 168 DRFF-R2 Dataset 1 recordings of the paper.
 
     python scripts/extract_views.py /path/to/DRFF-R2/dataset1-single_drone_states views.npz [--device cuda]
 
-Each recording is about 0.6 GB; the full run reads about 100 GB. The output holds, per recording: event (file name),
-product, condition, four-state label, five-class label, and both views.
+Each recording is about 0.5 GB; the full run reads 88 GB and took 12 minutes with --device cuda. The output holds, per
+recording: event (file name), product, condition, four-state label, five-class label, and both views.
 """
 
 from __future__ import annotations

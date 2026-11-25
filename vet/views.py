@@ -192,7 +192,8 @@ def stft_view(channels: np.ndarray) -> np.ndarray:
     """phi_stft: the 1524-dimensional STFT view of one (64, 4, 32, 96) channel array."""
     from scipy.fft import dct
 
-    v = np.asarray(channels, dtype=np.float32)
+    # C order, as in the paper's caches: float32 means over another memory layout round differently
+    v = np.ascontiguousarray(channels, dtype=np.float32)
     mag, delta, sin, cos = v[:, 0], v[:, 1], v[:, 2], v[:, 3]
     frequency = np.concatenate((mag.mean(axis=(0, 1)), mag.std(axis=(0, 1)), np.abs(delta).mean(axis=(0, 1)),
                                 np.sqrt(np.square(sin.mean(axis=(0, 1))) + np.square(cos.mean(axis=(0, 1))))))
@@ -201,8 +202,10 @@ def stft_view(channels: np.ndarray) -> np.ndarray:
                             np.sqrt(np.square(sin.mean(axis=(1, 2))) + np.square(cos.mean(axis=(1, 2))))[:, None]),
                            axis=1)
     temporal = dct(token, type=2, axis=0, norm="ortho")[:8]
-    statistics = np.concatenate((token.mean(axis=0), token.std(axis=0), np.quantile(token, 0.10, axis=0),
-                                 np.quantile(token, 0.90, axis=0)))
+    # float64 quantiles: NumPy 2 interpolates float32 quantiles in single precision
+    wide = token.astype(np.float64)
+    statistics = np.concatenate((token.mean(axis=0), token.std(axis=0), np.quantile(wide, 0.10, axis=0),
+                                 np.quantile(wide, 0.90, axis=0)))
     return np.concatenate((frequency, token.ravel(), temporal.ravel(), statistics)).astype(np.float32)
 
 

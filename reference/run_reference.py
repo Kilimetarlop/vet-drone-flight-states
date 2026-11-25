@@ -3,7 +3,8 @@
     python reference/run_reference.py features --dataset-root DRFF-R2/dataset1-single_drone_states --work work/
     python reference/run_reference.py model --work work/ --out reference_outputs.npz
 
-`features` runs the five raw-data builders (resumable; they read about 100 GB in all) and the four derived steps:
+`features` runs the five raw-data builders (resumable; they read the 168 recordings, 88 GB, in several passes) and the
+four derived steps:
     event tokens -> slow-time energy -> slow-time motion features and the periodic-observability gate
     micro-IQ windows -> scan and STFT recording features (the 4948-d fused view of the domain-invariant branch)
     dense spectrogram -> condition descriptors          spectral activity -> spectral summaries and aligned tracks
@@ -13,9 +14,9 @@ the domain-invariant veto and the Hover override; then, with strict double exclu
 held-out source product. It writes the format that `scripts/run_vet.py --reference-outputs` reads:
     event, folds, target_h, target_d (four states), source_h, source_d, plus the five-class arrays.
 
-The fitting code in `hierarchical_reference/` is the authors' research code, copied unchanged except for imports and
-the dataset-path default; development notes in its comments were removed. Expect about one to two hours for `model` on
-a desktop CPU.
+The fitting code in `hierarchical_reference/` is the authors' research code, copied unchanged except for imports, the
+dataset-path default, and the explicit double precision of three functions (see README.md); development notes in its
+comments were removed. `features` took about an hour with a GPU, and `model` 10 minutes on a 24-core desktop CPU.
 """
 
 from __future__ import annotations

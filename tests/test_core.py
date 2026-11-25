@@ -92,6 +92,11 @@ def test_views_have_the_paper_dimensions():
     assert stft_view(rng.normal(size=(64, 4, 32, 96)).astype(np.float16)).shape == (1524,)
 
 
+def test_stft_view_does_not_depend_on_memory_layout():
+    channels = np.random.default_rng(3).normal(size=(64, 4, 32, 96)).astype(np.float16)
+    assert np.array_equal(stft_view(channels), stft_view(np.asfortranarray(channels)))
+
+
 def test_protocol_runs_with_precomputed_reference():
     rng = np.random.default_rng(2)
     products = [f"p{i}" for i in range(4)]

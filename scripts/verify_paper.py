@@ -39,6 +39,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", type=Path, required=True)
     ap.add_argument("--raw-root", type=Path)
+    ap.add_argument("--device", default="cpu", help="device of the raw-view check (the paper's views used a GPU)")
     ap.add_argument("--n-raw", type=int, default=4)
     ap.add_argument("--with-baselines", action="store_true")
     ap.add_argument("--jobs", type=int, default=-1, help="parallel workers of the DG baselines (fewer need less memory)")
@@ -127,7 +128,7 @@ def main() -> int:
         pick = np.linspace(0, len(y) - 1, args.n_raw, dtype=int)
         diff = {"envelope": 0.0, "stft": 0.0, "events": []}
         for i in pick:
-            v = recording_views(rows[str(a["event"][i])].path)
+            v = recording_views(rows[str(a["event"][i])].path, args.device)
             diff["envelope"] = max(diff["envelope"], float(np.abs(v["envelope"] - a["envelope"][i]).max()))
             diff["stft"] = max(diff["stft"], float(np.abs(v["stft"] - a["stft"][i]).max()))
             diff["events"].append(str(a["event"][i]))

@@ -32,7 +32,7 @@ cd vet-drone-flight-states
 pip install -r requirements.txt
 ```
 
-Python 3.10 or later. The pinned versions are those with which every check below was run; PyTorch is needed for the STFT view, the reference features, and the DG baselines, and aeon for the reference classifier.
+Python 3.11 or later (the pinned scikit-learn and aeon need it). Every check below ran on Python 3.12 with the pinned versions; PyTorch is needed for the STFT view, the reference features, and the DG baselines, and aeon for the reference classifier.
 
 ## Quick start
 
@@ -41,7 +41,7 @@ python examples/demo_synthetic.py   # VET end to end on a synthetic pool (no dat
 python -m pytest tests              # checks of the equations and the protocol
 ```
 
-The demo builds eight synthetic products whose reference classifier reports slow transit as hover. VET admits Hover → Horizontal in every fold and repairs most of these reports. Its numbers describe the synthetic pool only.
+The demo builds eight synthetic products whose reference classifier reports 32 of 48 slow transits as Hover. VET admits Hover → Horizontal in every fold and changes 15 reports: 14 repairs and one damage. Its numbers describe the synthetic pool only.
 
 ## Typical use on your own data
 
@@ -53,7 +53,8 @@ from vet.model import run_whole_product_holdout, fit_monitor
 views = {"envelope": X_env, "stft": X_stft}            # (n, 454), (n, 1524) from vet.views, or your own views
 result = run_whole_product_holdout(y, product, views, reference)    # evaluation: one fold per product
 for fold in result.folds:
-    print(fold.target, fold.selection.lam, fold.selection.eta, fold.selection.admitted)
+    if fold.selection is not None:                      # None: no eligible configuration, the reference is kept
+        print(fold.target, fold.selection.lam, fold.selection.eta, fold.selection.admitted)
 
 monitor = fit_monitor(y, product, views, reference)    # deployment: all known products as sources
 reports = monitor.report(views_new, h_new, d_new)      # h_new, d_new from the reference fitted on all products
@@ -65,13 +66,13 @@ Everything VET selects (the configuration, the admitted directions) is read from
 
 ```bash
 export DRFF_R2_DATASET1=/path/to/DRFF-R2/dataset1-single_drone_states
-python scripts/extract_views.py $DRFF_R2_DATASET1 views.npz                                   # VET's two views
+python scripts/extract_views.py $DRFF_R2_DATASET1 views.npz --device cuda                     # VET's two views
 python reference/run_reference.py features --dataset-root $DRFF_R2_DATASET1 --work work/      # reference features
 python reference/run_reference.py model --work work/ --out reference_outputs.npz              # reference outputs
 python scripts/run_vet.py views.npz --reference-outputs reference_outputs.npz                 # VET (Algorithm 1)
 ```
 
-Each extraction step reads Dataset 1 (about 100 GB) once; `model` takes about an hour on a desktop CPU. `run_vet.py` documents the format of the reference outputs, so any other reference classifier can take Step 1. Without `--reference-outputs`, it fits the stand-in of `vet/reference.py` inside every split. That reference is weak on unseen products (78 of 168 correct), its errors do not recur by direction, and VET admits no change on top of it: VET's gain comes from verifying the recurring errors of a strong reference.
+`extract_views.py` reads the 168 recordings (88 GB) once and took 12 minutes with a GPU; `features` reads them in several passes and took about an hour; `model` took 10 minutes on a 24-core desktop CPU. Both extraction steps used a GPU in the paper. VET's reports are the same on views computed on a CPU (see Views below); the reference features were checked on a GPU only. `run_vet.py` documents the format of the reference outputs, so any other reference classifier can take Step 1. Without `--reference-outputs`, it fits the stand-in of `vet/reference.py` inside every split. The stand-in runs the pipeline end to end but does not show the gain of VET: it is weak on unseen products (78 of 168 correct), VET's candidates differ from its judgments in at most eight held-out source predictions per fold, Hover → Horizontal is admitted in two folds, and no target report changes.
 
 ## Faithfulness to the paper
 
@@ -84,8 +85,9 @@ Each extraction step reads Dataset 1 (about 100 GB) once; `model` takes about an
 - **Sensitivity.** The twelve admission-threshold settings and four fixed configurations give 114 to 118 correct reports, as in Table VI.
 - **Statistics.** Wilson interval 62.93%–76.64%, McNemar p = 0.021, sign-flip p = 0.0625, and product-bootstrap intervals of ΔAccuracy [+1.79, +9.52], ΔMacro-F1 [−0.46, +6.81], and ΔBA [−3.39, +3.39] points.
 - **Baselines.** Retrained with `--with-baselines`, all seven DG methods give the paper's reports for all 168 recordings: ERM 83, IRM 82, V-REx 84, Group DRO 87, CORAL 91, MMD 87, and DANN 80 correct.
-- **Reference classifier.** Rerun with `reference/run_reference.py model` on the paper's feature caches, it reproduces every judgment and posterior of the paper's reference on the target and the held-out source products, and VET on these outputs reproduces all 168 reports; see `reference/README.md`.
-- **Views.** Re-extracted from four raw recordings of different products and states (`--raw-root`), the envelope view equals the saved view exactly and the STFT view agrees within 8.6e-6 (the windows and the STFT channels are stored as float16).
+- **Reference classifier.** Rerun with `reference/run_reference.py model`, on the paper's feature caches and again on the caches that `features` rebuilds from the raw recordings, it reproduces every judgment and posterior of the paper's reference on the target and the held-out source products; see `reference/README.md`.
+- **Views.** Re-extracted from all 168 raw recordings with `scripts/extract_views.py --device cuda`, the envelope view equals the saved view exactly, and of the 256,032 values of the STFT view one differs, by 7.5e-9. Computed on a CPU, the STFT view agrees within 2.2e-5. Its 76 columns derived from the spread of a standardized channel are constant up to the float16 rounding of the channels; the heads standardize every column, which turns that rounding into noise, so on CPU views the ascent head's scores move by up to 0.18. With the paper's reference, VET's 168 reports and the gate's 168 reports are identical on the views of either device.
+- **From the raw files to the reports.** With the views of `extract_views.py --device cuda` and the reference outputs of `run_reference.py features` and `model`, all computed from the raw recordings, `run_vet.py` gives the paper's 168 VET reports (118 correct) with each fold's configuration and admitted directions, the gate gives the paper's 168 reports (110 correct), and the head scores agree within 3.0e-8.
 
 ## Data
 

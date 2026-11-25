@@ -187,7 +187,8 @@ def _probe_feature(value: np.ndarray, taper: np.ndarray) -> np.ndarray:
     if not np.isfinite(rms) or rms <= 0.0:
         raise RuntimeError("behavior probe contains degenerate I/Q")
 
-    spectrum = np.fft.fftshift(np.fft.fft(centered * taper))
+    # complex128: NumPy 2 transforms complex64 input in single precision
+    spectrum = np.fft.fftshift(np.fft.fft((centered * taper).astype(np.complex128)))
     power = np.square(np.abs(spectrum), dtype=np.float64)
     total = float(power.sum())
     if not np.isfinite(total) or total <= 0.0:
